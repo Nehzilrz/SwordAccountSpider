@@ -1,5 +1,9 @@
 import mongoose from 'mongoose'
-import KeywordList from './keyword'
+import Keyword from './keyword'
+
+const BuiltinKeyword = Keyword.keywords
+const SchoolSet = new Set(Keyword.schools)
+const SchoolKeyword = Keyword.schoolKeyword
 
 mongoose.connect('mongodb://localhost/paopao', { useNewUrlParser: true })
 
@@ -18,11 +22,12 @@ accountSchema.index('price')
 accountSchema.index('url')
 
 const infoSchema = new mongoose.Schema({
-    detail: Object,
+    detail: [Number],
     timestamp: Number,
     url: String,
     price: Number,
     qq: String,
+    body: String,
     school: String,
     name: String,
 })
@@ -39,41 +44,70 @@ keywordSchema.index('index')
 
 const accounts = mongoose.model('account', accountSchema)
 const infos = mongoose.model('info', infoSchema)
-const keywords = mongoose.model('keyword', keywordSchema)
+let keywordIndex = {}
 
 async function updateKeyword() {
+    const keywords = mongoose.model('keyword', keywordSchema)
     let index = await keywords.find({})
     index = index.length
-    for (let i = 0; i < KeywordList.length; ++i) {
-        let status = await keywords.findOne({ name: KeywordList[i].name })
+    for (let i = 0; i < BuiltinKeyword.length; ++i) {
+        let status = await keywords.findOne({ name: BuiltinKeyword[i].name })
         if (!status) {
             const entity = new keywords({
-                name: KeywordList[i].name,
-                type: KeywordList[i].type,
+                name: BuiltinKeyword[i].name,
+                type: BuiltinKeyword[i].type,
                 index: ++index,
             })
             await entity.save()
+            keywordIndex[BuiltinKeyword[i].name] = index
+        } else {
+            keywordIndex[BuiltinKeyword[i].name] = status.index
         }
     }
 }
 
-async function main() {
-    await updateKeyword()
+async function removeDuplicatedItems() {
     let items = await accounts.find({ parsed: false })
+    let urlSet = new Set()
+    let nRemove = 0
     for (let item of items) {
-        let text = item.unparsed.content
-        let detail = {}
-        for (let x of KeywordList) {
+        if (urlSet.has(item.url)) {
+            await accounts.remove({ _id : item._id })
+            ++nRemove
+        } else {
+            urlSet.add(item.url)
+        }
+    }
+    console.log(`${nRemove} duplicated items have been removed.`)
+}
+
+async function parseAll() {
+    let items = await accounts.find({ parsed: false })
+    let counter = 0
+    let newItemSet = new Set()
+    let nDuplicate = 0
+
+    for (let item of items) {
+        let text = item.unparsed.content.toLocaleLowerCase()
+        let detail = []
+        let body = '未知'
+        let hash = 0
+
+        for (let x of BuiltinKeyword) {
             for (let keyword of x.keyword) {
-                if (text.indexOf(keyword) != -1) {
-                    if (!detail[x.type]) {
-                        detail[x.type] = x.name
-                    } else {
-                        detail[x.type] = detail[x.type] + ' ' + x.name
-                    }
+                if (text.match(keyword)) {
+                    if (x.type == '体型') {
+                        body = x.name
+                    } 
+                    detail.push(keywordIndex[x.name])
                     break
                 }
             }
+        }
+
+        detail = detail.sort((a, b) => a - b)
+        for (let i = 0; i < detail.length; ++i) {
+            hash = (hash * 131 + detail[i]) % 133333333
         }
         
         let time = item.unparsed.time
@@ -93,6 +127,25 @@ async function main() {
             time = +date
         }
 
+        let school = item.school
+        if (!SchoolSet.has(school)) {
+            school = '未知'
+            for (let x of SchoolKeyword) {
+                for (let keyword of x.keywords) {
+                    if (text.indexOf(keyword) != -1) {
+                        school = x.name
+                        break
+                    }
+                }
+            }
+        }
+        hash = hash + school + body
+        if (newItemSet.has(hash)) {
+            nDuplicate++
+            continue
+        }
+        newItemSet.add(hash)
+
         const info = {
             detail,
             timestamp : time,
@@ -100,12 +153,23 @@ async function main() {
             price: item.price,
             qq: item.qq,
             name: item.name,
-            school: item.school,
+            school: school,
+            body: body,
         }
 
+        if (++counter % 1000 == 0) {
+            console.log(`${counter} items have been parsed.`)
+        }
         const entity = new infos(info)
         await entity.save()
     }
+    console.log(`${nDuplicate} duplicate items have been ignored.`)
+}
+
+async function main() {
+    await updateKeyword()
+    await removeDuplicatedItems()
+    await parseAll()
 }
 
 main()

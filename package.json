@@ -5,13 +5,18 @@
   "main": "index.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "spider": "node --experimental-modules index.mjs",
-    "parser": "node --experimental-modules parser.mjs"
+    "spider": "node --experimental-modules spider.mjs",
+    "parser": "node --experimental-modules parser.mjs",
+    "server": "node --experimental-modules index.mjs"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^0.19.0",
+    "koa": "^2.11.0",
+    "koa-compress": "^3.0.0",
+    "koa-cors": "0.0.16",
+    "koa-router": "^7.4.0",
     "mongoose": "^5.7.12"
   }
 }
