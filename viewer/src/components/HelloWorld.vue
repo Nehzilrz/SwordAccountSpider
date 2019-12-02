@@ -5,11 +5,27 @@
       wrap
     >
       <v-flex
-        xs12
-        mb-5
+        xs4 v-for="weights in allWeights" :key="weights.body"
       >
+        <h3 style="font-weight: 550; font-family: 微软雅黑;">{{weights.body}}价格分析</h3>
+        <v-simple-table>
+          <template v-slot:default>
+            <thead>
+              <tr>
+                <th class="text-left">Feature</th>
+                <th class="text-left">Weight</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in weights.value" :key="`weight${weights.body} ${index}`">
+                <td style="font-weight: 550; font-family: 微软雅黑;">{{ item[0] }}</td>
+                <td style="font-weight: 550; font-family: 微软雅黑;">{{ Number(item[1]).toFixed(2) }}</td>
+              </tr>
+            </tbody>
+          </template>
+        </v-simple-table>
+
       </v-flex>
-      <v-text>炮萝价格 (0 ~ {{ maxPrice}})</v-text>
       <svg :width="screenWidth" :height="screenHeight">
         <g :transform="`translate(${priceBarWidth}, 0)`">
           <g>
@@ -46,7 +62,8 @@ import axios from 'axios'
 const schools = ['五毒', '七秀', '万花', '长歌', '天策', '藏剑', '少林', '丐帮', '苍云', '纯阳', '明教', '唐门', '霸刀', '蓬莱', '凌雪阁']
 const bodys = ['萝莉', '正太', '成男', '成女']
 const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
-const urlPrefix = 'http://localhost:3002'
+const dataUrlPrefix = 'http://localhost:3002'
+const analysisUrlPrefix = 'http://localhost:5000/api'
 
 function expand(items, len) {
   let y = []
@@ -77,6 +94,8 @@ export default {
     categoryColor: null,
     indexColor: null,
     maxPrice: 10000,
+    allWeights: [],
+    body: '成男',
   }),
   computed: {
     screenHeight() {
@@ -85,7 +104,7 @@ export default {
   },
   async mounted() {
     let res, data
-    res = await axios.get(`${urlPrefix}/keywords`)
+    res = await axios.get(`${dataUrlPrefix}/keywords`)
     data = res.data
     let categorySet = new Map()
     let index = 0
@@ -107,7 +126,7 @@ export default {
 
     this.categoryColor = (x) => colors[categorySet.get(x)] || 'lightgray'
     this.keywords = data
-    res = await axios.get(`${urlPrefix}/info?body=萝莉&school=苍云`)
+    res = await axios.get(`${dataUrlPrefix}/info?body=萝莉&school=丐帮`)
     data = res.data
     this.maxPrice = Math.max(...data.map(d => d.price))
     for (let x of data) {
@@ -117,7 +136,14 @@ export default {
  
     this.screenWidth = document.body.clientWidth
     this.items = data.sort((a, b) => b.price - a.price)
-    console.log(this.items)
+    for (let body of ['萝莉', '成男', '成女']) {
+      res = await axios.get(`${analysisUrlPrefix}?body=${body}&min_price=2500`)
+      data = res.data
+      this.allWeights.push({
+        body: body,
+        value: data,
+      })
+    }
   }
 };
 </script>

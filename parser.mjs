@@ -42,6 +42,10 @@ const keywordSchema = new mongoose.Schema({
 keywordSchema.index('name')
 keywordSchema.index('index')
 
+const schoolSchema = new mongoose.Schema({
+    name: String
+})
+
 const accounts = mongoose.model('account', accountSchema)
 const infos = mongoose.model('info', infoSchema)
 let keywordIndex = {}
@@ -62,6 +66,21 @@ async function updateKeyword() {
             keywordIndex[BuiltinKeyword[i].name] = index
         } else {
             keywordIndex[BuiltinKeyword[i].name] = status.index
+        }
+    }
+}
+
+async function updateSchool() {
+    const schools = mongoose.model('school', schoolSchema)
+    let index = await schools.find({})
+    index = index.length
+    for (let i = 0; i < Keyword.schools.length; ++i) {
+        let status = await schools.findOne({ name: Keyword.schools[i] })
+        if (!status) {
+            const entity = new schools({
+                name: Keyword.schools[i],
+            })
+            await entity.save()
         }
     }
 }
@@ -93,21 +112,34 @@ async function parseAll() {
         let body = '未知'
         let hash = 0
 
-        for (let x of BuiltinKeyword) {
+        for (let x of BuiltinKeyword) if (x.value == 'bool') {
+            let t = 0
             for (let keyword of x.keyword) {
                 if (text.match(keyword)) {
                     if (x.type == '体型') {
                         body = x.name
-                    } 
-                    detail.push(keywordIndex[x.name])
+                    }
+                    t = 1
                     break
                 }
             }
+            detail.push(t)
+        } else if (x.value == 'number') {
+        let t = x.default
+        for (let keyword of x.keyword) {
+            let match = text.match(keyword)
+            if (match) {
+                match = [...match]
+                t = +match[1] || x.default
+                break
+            }
         }
+        detail.push(t)
+    }
 
-        detail = detail.sort((a, b) => a - b)
-        for (let i = 0; i < detail.length; ++i) {
-            hash = (hash * 131 + detail[i]) % 133333333
+
+        for (let i = 0; i < detail.length; ++i) if (detail[i]) {
+            hash = (hash * 131 + i) % 133333333
         }
         
         let time = item.unparsed.time
@@ -125,6 +157,10 @@ async function parseAll() {
                 date = new Date()
             }
             time = +date
+        }
+
+        if (text.indexOf('---') != -1 || text.indexOf('一一一') != -1) {
+            continue
         }
 
         let school = item.school
@@ -168,6 +204,7 @@ async function parseAll() {
 
 async function main() {
     await updateKeyword()
+    await updateSchool()
     await removeDuplicatedItems()
     await parseAll()
 }
