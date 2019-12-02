@@ -137,7 +137,7 @@ export default {
     this.screenWidth = document.body.clientWidth
     this.items = data.sort((a, b) => b.price - a.price)
     for (let body of ['萝莉', '成男', '成女']) {
-      res = await axios.get(`${analysisUrlPrefix}?body=${body}&min_price=2500`)
+      res = await axios.get(`${analysisUrlPrefix}?body=${body}&min_price=1500`)
       data = res.data
       this.allWeights.push({
         body: body,

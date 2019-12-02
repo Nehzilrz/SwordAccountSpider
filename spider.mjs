@@ -45,7 +45,7 @@ async function fetchPage(index) {
     }
     let counter = 0
     for (let item of items) {
-        const status = accounts.findOne({ url: item.url })
+        const status = await accounts.findOne({ url: item.url })
         if (status) {
             continue
         }
@@ -58,11 +58,8 @@ async function fetchPage(index) {
 }
 
 async function main() {
-    for (let i = 1; i < 2000; ++i) {
+    for (let i = 200; i < 400; ++i) {
         const status = await fetchPage(i)
-        if (status) {
-            break
-        }
     }
 }
 
