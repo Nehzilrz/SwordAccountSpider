@@ -1,0 +1,1 @@
+{"options":{},"indexes":[{"v":2,"key":{"_id":1},"name":"_id_","ns":"paopao.accounts"},{"v":2,"key":{"price":1},"name":"price_1","ns":"paopao.accounts","background":true},{"v":2,"key":{"url":1},"name":"url_1","ns":"paopao.accounts","background":true}],"uuid":"34320c3901934c76b53793c147e2bc72"}

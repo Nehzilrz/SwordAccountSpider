@@ -70,7 +70,7 @@ api.get('/keywords', async (ctx) => {
     const min_price = ctx.request.query['min_price'] || 1
     const max_price = ctx.request.query['max_price'] || 999999
     const query = {
-        price: { $gte: +min_price, $lte: max_price },
+        price: { $gte: +min_price, $lte: +max_price },
         timestamp: { $gte: +start_date, $lte: end_date },
     }
     if (ctx.request.query['body']) {
@@ -81,9 +81,10 @@ api.get('/keywords', async (ctx) => {
     }
     const keyword = Keyword.keywords.slice(0, Keyword.keywords.length - 4).map(d => ({ name: d.name, type: d.type }))
     const school = Keyword.schools
+    console.log(query)
     const items = (await infos.find(query)).sort((a, b) => b.timestamp - a.timestamp).map(d => {
         const detailSet = new Set(d.detail)
-        const detail = keyword.map((k, index) => detailSet.has(index) ? 1 : 0)
+        const detail = keyword.map((k, index) => detailSet.has(index + 1) ? 1 : 0)
         return { detail, price : d.price, school: d.school }
     })
     ctx.body = { keyword, school, items }
