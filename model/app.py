@@ -41,19 +41,16 @@ def get_model(keywords, schools, items, body):
     test_y=ss_y.transform(test_y.values.reshape(-1, 1))
     
     model_mlp = MLPRegressor(solver='lbfgs', hidden_layer_sizes=(100, 100, 100), max_iter=1500, random_state=1, activation='logistic')
-    
     model_mlp.fit(train_x, train_y.ravel())
     pred_y = model_mlp.predict(test_x)
     y0 = ss_y.inverse_transform(pred_y)
     y1 = ss_y.inverse_transform(test_y.ravel())
-
     tot = 0
     for i in range(len(y0)):
         d = y0[i] - y1[i]
         if d < 0:
             d = -d
         tot += d / y1[i]
-
     print(tot / len(y0))
     
     y1 = model_mlp.predict(x)

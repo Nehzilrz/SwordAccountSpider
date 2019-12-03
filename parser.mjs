@@ -98,7 +98,7 @@ async function removeDuplicatedItems() {
     console.log(`${nRemove} duplicated items have been removed.`)
 }
 
-function parsePrice(x) {
+function parseNum(x) {
     if (!x) return 0
     try {
         let ret = 0
@@ -133,10 +133,10 @@ async function parseAll() {
     let newItemSet = new Set()
     let nDuplicate = 0
 
-    for (let item of items) {
-        let text = item.unparsed.content.toLocaleLowerCase().replace(/\s/g, '')
+    async function parse(text, time, item) {
+        text = text.toLocaleLowerCase().replace(/\s/g, '')
         for (let r of Keyword.preReplace) {
-            text.replace(r[0], r[1])
+            text = text.replace(r[0], r[1])
         }
         let text_fixed = text
         let detail = []
@@ -146,12 +146,12 @@ async function parseAll() {
 
         let price_reg = /【[^\d^y]*(\d|w|k)+[^\d]*】/
         let match = text.match(price_reg)
-        if (!match) continue
+        if (!match) return
         match = match[0].match(/(\d|w|k)+/)
-        if (!match) continue
-        let price = parsePrice(match[0])
+        if (!match) return
+        let price = parseNum(match[0])
         if (price == -1 || !price) {
-            continue
+            return
         }
 
         if (text_fixed.match(/(复刻|下架)/) != null) {
@@ -177,10 +177,17 @@ async function parseAll() {
                     }
                 }
                 if (t == x.default) {
-                    const start = Keyword.findKeywordIndex(x.condition.from)
-                    const end = Keyword.findKeywordIndex(x.condition.to)
-                    for (let i = start; i <= end; ++i) {
-                        t += detail[i]
+                    if (x.condition.from) {
+                        const start = Keyword.findKeywordIndex(x.condition.from)
+                        const end = Keyword.findKeywordIndex(x.condition.to)
+                        for (let i = start; i <= end; ++i) {
+                            t += detail[i]
+                        }
+                    } else if (x.condition.keys) {
+                        for (let key of x.condition.keys) {
+                            let i = Keyword.findKeywordIndex(key)
+                            t += detail[i]
+                        }
                     }
                     t = x.condition.rule(t)
                 }
@@ -205,11 +212,16 @@ async function parseAll() {
                 for (let keyword of x.keyword) {
                     let match = text.match(keyword)
                     if (match && match[0]) {
-                        let next = match[0].match(/\d+/)
-                        if (next && next[0]) {
-                            t = parseInt(next[0])
+                        if (x.name == '资历') {
+                            let next = match[0].match(/(\d|w)+/)
+                            t = parseNum(next && next[0] || 10000) / 10000
                         } else {
-                            t = 1
+                            let next = match[0].match(/\d+/)
+                            if (next && next[0]) {
+                                t = parseInt(next[0])
+                            } else {
+                                t = 1
+                            }
                         }
                         break
                     }
@@ -268,18 +280,17 @@ async function parseAll() {
 
         if (!body) {
             console.log(text)
-            continue
+            return
         }
         if (!school) {
             console.log(text)
-            continue
+            return
         }
 
         for (let i = 0; i < detail.length; ++i) if (detail[i]) {
             hash = (hash * 131 + i) % 133333333
         }
         
-        let time = item.unparsed.time
 
         if (time == 'parsed') {
             time = item.timestamp
@@ -301,14 +312,14 @@ async function parseAll() {
             }
     
             if (text.indexOf('---') != -1 || text.indexOf('一一一') != -1) {
-                continue
+                return
             }
         }
 
         hash = hash + school + body
         if (newItemSet.has(hash)) {
             nDuplicate++
-            continue
+            return
         }
         newItemSet.add(hash)
 
@@ -329,13 +340,24 @@ async function parseAll() {
         const entity = new infos(info)
         await entity.save()
     }
+
+    for (let item of items) {
+        let text = item.unparsed.content
+        let time = item.unparsed.time
+        await parse(text, time, item)
+        
+    }
     console.log(`${nDuplicate} duplicate items have been ignored.`)
 }
 
-async function main() {
+async function updateInfo() {
     await updateKeyword()
     await updateSchool()
     await removeDuplicatedItems()
+}
+
+async function main() {
+    //await updateInfo()
     await parseAll()
 }
 
