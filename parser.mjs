@@ -45,7 +45,7 @@ const schoolSchema = new mongoose.Schema({
 })
 
 const accounts = mongoose.model('account', accountSchema)
-const infos = mongoose.model('info', infoSchema)
+const infos = mongoose.model('tinfo', infoSchema)
 let keywordIndex = {}
 
 async function updateKeyword() {
@@ -128,7 +128,7 @@ function parsePrice(x) {
 }
 
 async function parseAll() {
-    let items = await accounts.find({ parsed: false })
+    let items = await accounts.find()
     let counter = 0
     let newItemSet = new Set()
     let nDuplicate = 0
@@ -182,6 +182,9 @@ async function parseAll() {
                     let match = text.match(keyword)
                     if (match) {
                         match = [...match]
+                        if (x.name == '奇遇') {
+                            console.log(match)
+                        }
                         t = +match[1] || 1
                         break
                     }
@@ -205,7 +208,7 @@ async function parseAll() {
             for (let x of match) {
                 for (let y of SchoolKeyword) {
                     for (let k of y.keywords) {
-                        if (!school && x.indexOf(k) != -1) {
+                        if (!school && x.match(k) != null) {
                             school = y.name
                         }
                     }
@@ -222,9 +225,10 @@ async function parseAll() {
             }
         }
         if (!school) {
+            let text_head_tail = text.slice(0, 50) + '$' + text.slice(-50)
             for (let x of SchoolKeyword) {
-                for (let keyword of x.keywords) {
-                    if (text.indexOf(keyword) != -1) {
+                for (let k of x.keywords) {
+                    if (!school && text_head_tail.match(k) != null) {
                         school = x.name
                         break
                     }
@@ -246,24 +250,29 @@ async function parseAll() {
         }
         
         let time = item.unparsed.time
-        if (time.indexOf('分钟前')) {
-            time = new Date() - parseInt(time) * 60 * 1000
-        } else if (time.indexOf('小时前')) {
-            time = new Date() - parseInt(time) * 3600 * 1000
-        } else if (time.indexOf('天前')) {
-            time = new Date() - parseInt(time) * 24 * 3600 * 1000
-        } else {
-            let date = text.match(/\(([^\)]+)/)
-            if (date) {
-                date = new Date(`2019-${date}`)
-            } else {
-                date = new Date()
-            }
-            time = +date
-        }
 
-        if (text.indexOf('---') != -1 || text.indexOf('一一一') != -1) {
-            continue
+        if (time == 'parsed') {
+            time = item.timestamp
+        } else {
+            if (time.indexOf('分钟前')) {
+                time = new Date() - parseInt(time) * 60 * 1000
+            } else if (time.indexOf('小时前')) {
+                time = new Date() - parseInt(time) * 3600 * 1000
+            } else if (time.indexOf('天前')) {
+                time = new Date() - parseInt(time) * 24 * 3600 * 1000
+            } else {
+                let date = text.match(/\(([^\)]+)/)
+                if (date) {
+                    date = new Date(`2019-${date}`)
+                } else {
+                    date = new Date()
+                }
+                time = +date
+            }
+    
+            if (text.indexOf('---') != -1 || text.indexOf('一一一') != -1) {
+                continue
+            }
         }
 
         hash = hash + school + body

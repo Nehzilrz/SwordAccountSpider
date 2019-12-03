@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import ElasticNet, ElasticNetCV, SGDRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import RFE
 from sklearn import preprocessing
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
@@ -13,7 +14,7 @@ import pymongo
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 mydb = myclient["paopao"]
 
-def get_model(keywords, schools, items):
+def get_model(keywords, schools, items, body):
     keywords = [x['name'] for x in keywords]
     keyword_n = len(keywords)
     candidates = {}
@@ -21,24 +22,14 @@ def get_model(keywords, schools, items):
     for i in schools:
         keywords.append(i)
         candidates[i] = np.array([1 if x['school'] == i else 0 for x in items])
-    '''
-    bodys = ['成男', '成女', '萝莉', '正太']
-    for i in bodys:
-        keywords.append(i)
-        candidates[i] = np.array([1 if x['body'] == i else 0 for x in items])
-    '''
-
-    if 'price' not in keywords:
-        keywords.append('price')
 
     for i in range(0, keyword_n):
         candidates[keywords[i]] = np.array([x['detail'][i] for x in items])
 
-    candidates['price'] = np.array([x['price'] for x in items])
-
     df = pd.DataFrame(candidates, columns = keywords)
-    x = df[keywords[:-1]]
-    y = df[keywords[-1]]
+    
+    x = df[keywords]
+    y = pd.Series(np.array([x['price'] for x in items]))
     train_x, test_x, train_y, test_y = train_test_split(x, y, train_size=0.8, random_state=33)
 
     ss_x = preprocessing.StandardScaler()
@@ -48,10 +39,9 @@ def get_model(keywords, schools, items):
     ss_y = preprocessing.StandardScaler()
     train_y = ss_y.fit_transform(train_y.values.reshape(-1, 1))
     test_y=ss_y.transform(test_y.values.reshape(-1, 1))
-
     
-    model_mlp = MLPRegressor(solver='lbfgs', hidden_layer_sizes=(200, 200, 200), random_state=1)
-    # print(train_x, train_y)
+    model_mlp = MLPRegressor(solver='lbfgs', hidden_layer_sizes=(100, 100, 100), max_iter=1500, random_state=1, activation='logistic')
+    
     model_mlp.fit(train_x, train_y.ravel())
     pred_y = model_mlp.predict(test_x)
     y0 = ss_y.inverse_transform(pred_y)
@@ -63,31 +53,47 @@ def get_model(keywords, schools, items):
         if d < 0:
             d = -d
         tot += d / y1[i]
+
     print(tot / len(y0))
     
-    mlp_score=model_mlp.score(test_x, test_y.ravel())
+    y1 = model_mlp.predict(x)
+    y1 = ss_y.inverse_transform(y1)
+    z = []
 
-    print('sklearn多层感知器-回归模型得分', mlp_score)
-    
-    '''
-    tuned_parameters = [{
-        'hidden_layer_sizes': [40, 60, 80, 100, 120, 140, 160, 180, 200, 220],
-        'activation': ['relu', 'tanh', 'logistic'],
-        'solver':['lbfgs', 'adam'], 'alpha':[0.0001],
-        'batch_size':['auto'], 'learning_rate':['constant'],
-        'learning_rate_init':[0.001], 'max_iter':[500, 600, 700, 800, 1000, 1200, 1500]
-    }]
+    for i in range(0, len(y)):
+        delta = y1[i] - y[i] if y1[i] - y[i] > 0 else y[i] - y1[i]
+        delta = delta * 1.0 / y[i]
+        z.append([i, (y1[i] - y[i]) / y[i]])
 
-    rgr = GridSearchCV(MLPRegressor(), tuned_parameters, cv=5, verbose=5, n_jobs=8)
-    rgr.fit(train_x, train_y.ravel())
-    train_mse = mean_squared_error(train_y.ravel(), rgr.predict(X_train))
-    test_mse = mean_squared_error(train_x, rgr.predict(X_test))
+    z.sort(key = lambda x:-x[1])
+    print('===========================higher=======================')
+    for x in z[:20]:
+        i = x[0]
+        item = mydb['accounts'].find_one({ 'url': items[i]['url'] })
+        print(item['unparsed']['content'])
+        clothes = []
+        for k in range(0, keyword_n):
+            if items[i]['detail'][k] >= 0.5:
+                clothes.append([keywords[k], items[i]['detail'][k]])
+        print(clothes)
+        print('expected', y1[i], 'actually', y[i])
+
+    print('==========================lower=======================')
+    for x in z[-20:]:
+        i = x[0]
+        item = mydb['accounts'].find_one({ 'url': items[i]['url'] })
+        print(item['unparsed']['content'])
+        clothes = []
+        for k in range(0, keyword_n):
+            if items[i]['detail'][k] >= 0.5:
+                clothes.append([keywords[k], items[i]['detail'][k]])
+        print(clothes)
+        print('expected', y1[i], 'actually', y[i])
+
     
-    print(rgr.best_params_)
-    print(rgr.best_score_)
-    print("Train MSE:", np.round(train_mse,2))
-    print("Test MSE:", np.round(test_mse,2))
-    '''
+    mlp_score = model_mlp.score(test_x, test_y.ravel())
+
+    print('sklearn mlp regressor score for', body, mlp_score)
     return items
     
 def hello_world():
@@ -98,29 +104,29 @@ def hello_world():
     schools = mydb['schools'].find()
     schools = [x['name'] for x in schools]
 
-    items = mydb['infos'].find({ 'body': '萝莉' })
+    items = mydb['infos'].find({ 'body': '萝莉' , 'price' : { '$gte' : 2000 }})
     items = [
         { 'price' : x['price'], 'school' : x['school'], 'detail': x['detail'], 'url': x['url'], 'body': x['body'] }
         for x in items
     ]
 
-    model = get_model(keywords, schools, items)
+    model = get_model(keywords, schools, items, '萝莉')
 
-    items = mydb['infos'].find({ 'body': '成女' })
+    items = mydb['infos'].find({ 'body': '成女' , 'price' : { '$gte' : 2000 }})
     items = [
         { 'price' : x['price'], 'school' : x['school'], 'detail': x['detail'], 'url': x['url'], 'body': x['body'] }
         for x in items
     ]
 
-    model = get_model(keywords, schools, items)
+    model = get_model(keywords, schools, items, '成女')
 
-    items = mydb['infos'].find({ 'body': '成男' })
+    items = mydb['infos'].find({ 'body': '成男' , 'price' : { '$gte' : 2000 }})
     items = [
         { 'price' : x['price'], 'school' : x['school'], 'detail': x['detail'], 'url': x['url'], 'body': x['body'] }
         for x in items
     ]
 
-    model = get_model(keywords, schools, items)
+    model = get_model(keywords, schools, items, '成男')
     
 
 hello_world()

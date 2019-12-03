@@ -1,3 +1,4 @@
 node_modules
 model/node_modules
+model/__pycache__
 viewer/node_modules
