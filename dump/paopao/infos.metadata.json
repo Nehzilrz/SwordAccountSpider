@@ -1,1 +1,1 @@
-{"options":{},"indexes":[{"v":2,"key":{"_id":1},"name":"_id_","ns":"paopao.infos"},{"v":2,"key":{"price":1},"name":"price_1","ns":"paopao.infos","background":true},{"v":2,"key":{"url":1},"name":"url_1","ns":"paopao.infos","background":true}],"uuid":"87f2f7337add40bca7ad32cd57ab1fcb"}
+{"options":{},"indexes":[{"v":2,"key":{"_id":1},"name":"_id_","ns":"paopao.infos"},{"v":2,"key":{"price":1},"name":"price_1","ns":"paopao.infos","background":true},{"v":2,"key":{"url":1},"name":"url_1","ns":"paopao.infos","background":true}],"uuid":"cc74cbb01df748a787c0d85071ae77f0"}

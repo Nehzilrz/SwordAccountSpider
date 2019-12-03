@@ -131,6 +131,7 @@ async function parseAll() {
     let items = await accounts.find()
     let counter = 0
     let newItemSet = new Set()
+    let newItemDetail = {}
     let nDuplicate = 0
 
     async function parse(text, time, item) {
@@ -144,12 +145,20 @@ async function parseAll() {
         let school = null
         let hash = 0
 
-        let price_reg = /【[^\d^y]*(\d|w|k)+[^\d]*】/
+        let price_reg = /【[^\d^y]*(\d|w|k)+[^\d]*】/g
         let match = text.match(price_reg)
+        let price = -1
         if (!match) return
-        match = match[0].match(/(\d|w|k)+/)
-        if (!match) return
-        let price = parseNum(match[0])
+        for (let k = 0; k < match.length; ++k) {
+            let str = match[k].replace(/资历(\d|w|k)+/, '')
+            let m = str.match(/(\d|w|k)+/g)
+            if (!m) continue
+            for (let i = 0; i < m.length; ++i) if (m[i] != 'w' && m[i] != 'k') {
+                price = parseNum(m[i])
+                break
+            }
+            if (price > 0) break
+        }
         if (price == -1 || !price) {
             return
         }
@@ -287,8 +296,10 @@ async function parseAll() {
             return
         }
 
-        for (let i = 0; i < detail.length; ++i) if (detail[i]) {
+        let compressed = []
+        for (let i = 0; i < detail.length; ++i) if (detail[i] >= 0.5) {
             hash = (hash * 131 + i) % 133333333
+            compressed.push(i)
         }
         
 
@@ -321,6 +332,30 @@ async function parseAll() {
             nDuplicate++
             return
         }
+        let id = school + body + parseInt(price)
+        if (newItemDetail[id]) {
+            for (let vec of newItemDetail[id]) {
+                let i = 0, j = 0, cnt = 0
+                if (Math.abs(vec.length - compressed.length) > 2) continue
+                while (i < vec.length && j < compressed.length) {
+                    if (vec[i] == compressed[j]) {
+                        cnt++, i++, j++
+                    } else if (vec[i] < compressed[j]) {
+                        i++
+                    } else {
+                        j++
+                    }
+                }
+                if (cnt - Math.min(vec.length, compressed.length) <= 2 && Math.max(vec.length, compressed.length) - cnt <= 2) {    
+                    nDuplicate++
+                    return
+                }
+            }
+        } else {
+            newItemDetail[id] = []
+        }
+        newItemDetail[id].push(compressed)
+
         newItemSet.add(hash)
 
         const info = {
@@ -357,7 +392,7 @@ async function updateInfo() {
 }
 
 async function main() {
-    //await updateInfo()
+    await updateInfo()
     await parseAll()
 }
 

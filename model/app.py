@@ -64,7 +64,7 @@ def get_model(keywords, schools, items, body):
 
     z.sort(key = lambda x:-x[1])
     print('===========================higher=======================')
-    for x in z[:20]:
+    for x in z[:2]:
         i = x[0]
         item = mydb['accounts'].find_one({ 'url': items[i]['url'] })
         print(item['unparsed']['content'])
@@ -76,7 +76,7 @@ def get_model(keywords, schools, items, body):
         print('expected', y1[i], 'actually', y[i])
 
     print('==========================lower=======================')
-    for x in z[-20:]:
+    for x in z[-2:]:
         i = x[0]
         item = mydb['accounts'].find_one({ 'url': items[i]['url'] })
         print(item['unparsed']['content'])
