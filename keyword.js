@@ -178,7 +178,7 @@ const keywords = [
     { name: "双十一", value: 'bool', type:"披风", keyword:[/双十一/] },
     { name: "一代披风", value: 'cond', type:"披风", default: 0, keyword:[], condition: { from: '一代黑', to: '一代粉', rule: d => d } },
     { name: "一代披风全", value: 'cond', type:"披风", default: 0, keyword:[], condition: { from: '一代披风', to: '一代披风', rule: d => d == 6 ? 50 : (d > 4 ? 25 : 0) } },
-    { name: "100cw", value: 'bool', type:"杂项", keyword:[/100(^c)*cw/, /100(^橙)*橙武/, /100w/, /100(^大)*大铁/, /100(^玄)*玄晶/, /归(虚|墟)玄晶/, /100级?双cw/] },
+    { name: "100cw", value: 'bool', type:"杂项", keyword:[/100(^c)*cw/, /100(^橙)*橙武/, /100级(橙武|cw)/, /100w/, /100(^大)*大铁/, /100(^玄)*玄晶/, /归(虚|墟)玄晶/, /100级?双cw/] },
     { name: "双100cw", value: 'bool', type:"杂项", keyword:[/双100(^c)*cw/, /双100(^橙)*橙武/, /100(^双)*双(^c)*cw/, /100(^双)*双(^橙)*橙武/] },
     { name: "焰归", value: 'bool', type:"杂项", keyword:[/焰归/] },
     { name: "珠盏", value: 'bool', type:"杂项", keyword:[/珠盏/] },
