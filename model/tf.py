@@ -40,19 +40,19 @@ train_y = ss_y.fit_transform(train_y.values.reshape(-1, 1))
 test_y=ss_y.transform(test_y.values.reshape(-1, 1))
 
 def build_model():
-  model = keras.Sequential([
+    model = keras.Sequential([
     #layers.Dense(128, activation='relu', kernel_constraint=keras.constraints.NonNeg()),
     layers.Dense(256, activation='relu',input_shape=[len(train_x[0])]),
     layers.Dense(256, activation='relu'),
     layers.Dense(1)
-  ])
+    ])
 
-  optimizer = tf.keras.optimizers.RMSprop(0.001)
+    optimizer = tf.keras.optimizers.RMSprop(0.001)
 
-  model.compile(loss='mse',
+    model.compile(loss='mse',
                 optimizer=optimizer,
                 metrics=['mae', 'mse'])
-  return model
+    return model
 
 model = build_model()
 history = model.fit(
@@ -71,17 +71,19 @@ for i in range(len(y0)):
     tot += d / y1[i]
 print(tot / len(y0))
 
-y1 = model.predict(x)
-y1 = ss_y.inverse_transform(y1)
+y2 = ss_y.inverse_transform(new_y).flatten()
+y3 = ss_y.inverse_transform(cmp_y).flatten()
 z = []
 
-for i in range(0, len(y)):
-    delta = y1[i] - y[i] if y1[i] - y[i] > 0 else y[i] - y1[i]
-    delta = delta * 1.0 / y[i]
-    z.append([i, (y1[i] - y[i]) / y[i]])
+for i in range(0, len(y2)):
+    delta = y2[i] - y3[i] if y2[i] - y3[i] > 0 else y3[i] - y2[i]
+    delta = delta * 1.0 / y3[i]
+    z.append([i, (y2[i] - y3[i]) / y3[i]])
 
 z.sort(key = lambda x:-x[1])
-for x in z[:5] + z[-5:]:
+mid = int(len(z) / 5)
+
+for x in z[:5] + z[-5:] + z[mid:mid+5]:
     i = x[0]
     item = mydb['accounts'].find_one({ 'url': items[i]['url'] })
     print(item['unparsed']['content'])
@@ -90,4 +92,4 @@ for x in z[:5] + z[-5:]:
         if items[i]['detail'][k] >= 0.5:
             clothes.append([keywords[k], items[i]['detail'][k]])
     print(clothes)
-    print('expected', y1[i], 'actually', y[i])
+    print('expected', y2[i], 'actually', y3[i])
