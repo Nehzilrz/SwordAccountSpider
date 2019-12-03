@@ -1,5 +1,4 @@
 const keywords = [
-    { name: "红发", value: 'number', default: 0, type:"红发", keyword:[/(\d)+红/] },
     { name: "四红", value: 'bool', type:"红发", keyword:[/四红/, /全红/] },
     { name: "五红", value: 'bool', type:"红发", keyword:[/五红/, /全红/] },
     { name: "六红", value: 'bool', type:"红发", keyword:[/六红/, /全红/] },
@@ -12,13 +11,12 @@ const keywords = [
     { name: "羊红", value: 'bool', type:"红发", keyword:[/羊红/, /全红/] },
     { name: "猪红", value: 'bool', type:"红发", keyword:[/猪红/, /全红/] },
     { name: "狗红", value: 'bool', type:"红发", keyword:[/狗红/, /全红/] },
-    { name: "金发", value: 'number', default: 0, type:"金发", keyword:[/(\d)+金/] },
-    { name: "白发", value: 'number', default: 0, type:"金发", keyword:[/(\d)+白/] },
-    { name: "黑发", value: 'number', default: 0, type:"金发", keyword:[/(\d)+黑/] },
+    { name: "红发", value: 'cond', default: 0, type:"红发", keyword:[/(\d)+红/], condition: { from: '四红', to: '狗红', rule: d => d }  },
+    { name: "四五六红", value: 'cond', default: 0, type:"红发", keyword:[], condition: { from: '四红', to: '六红', rule: d => d == 3 }  },
     { name: "狐金", value: 'bool', type:"金发", keyword:[/狐金/, /全金/, /三巨头/] },
     { name: "一代金", value: 'bool', type:"金发", keyword:[/一代金/, /全金/, /三巨头/] },
-    { name: "苏金", value: 'bool', type:"金发", keyword:[/苏金/, /全金/, /三巨头/] },
     { name: "猴金", value: 'bool', type:"金发", keyword:[/猴金/, /全金/, /三巨头/] },
+    { name: "苏金", value: 'bool', type:"金发", keyword:[/苏金/, /全金/, /三巨头/] },
     { name: "蝶金", value: 'bool', type:"金发", keyword:[/蝶金/, /全金/] },
     { name: "喵金", value: 'bool', type:"金发", keyword:[/喵金/, /全金/] },
     { name: "考金", value: 'bool', type:"金发", keyword:[/考金/, /全金/] },
@@ -33,6 +31,10 @@ const keywords = [
     { name: "猪金", value: 'bool', type:"金发", keyword:[/猪金/, /全金/] },
     { name: "兔金", value: 'bool', type:"金发", keyword:[/兔金/, /全金/] },
     { name: "丝路金", value: 'bool', type:"金发", keyword:[/丝路金/, /全金/] },
+    { name: "金发三巨头", value: 'cond', default: 0, type:"金发", keyword:[/三巨头/], condition: { from: '狐金', to: '猴金', rule: d => d == 3 }  },
+    { name: "金发", value: 'cond', default: 0, type:"金发", keyword:[/(\d)+金/], condition: { from: '狐金', to: '丝路金', rule: d => d }  },
+    { name: "白发", value: 'number', default: 0, type:"金发", keyword:[/(\d)+白/] },
+    { name: "黑发", value: 'number', default: 0, type:"金发", keyword:[/(\d)+黑/] },
     { name: "粉白菜", value: 'bool', type:"五限", keyword:[/粉白菜/, /双色?白菜/] },
     { name: "紫白菜", value: 'bool', type:"五限", keyword:[/紫白菜/, /双色?白菜/] },
     { name: "黑金夜斩白", value: 'bool', type:"五限", keyword:[/黑金夜斩白/, /双色?夜斩白/] },
@@ -65,7 +67,7 @@ const keywords = [
     { name: "策马河洲", value: 'bool', type:"五限", keyword:[/策马河洲/, /双色?策马/] },
     { name: "黑风华", value: 'bool', type:"五限", keyword:[/黑风华/, /双色?风华/] },
     { name: "紫风华", value: 'bool', type:"五限", keyword:[/紫风华/, /双色?风华/] },
-    { name: "五限", value: 'number', type:"五限", keyword:[/(\d)+五限/] },
+    { name: "五限", value: 'cond', type:"五限", default: 0, keyword:[/(\d)+五限/], condition: { from: '粉白菜', to: '紫风华', rule: d => d } },
     { name: "白娃娃", value: 'bool', type:"六限", keyword:[/白娃娃/, /四色娃娃/] },
     { name: "粉娃娃", value: 'bool', type:"六限", keyword:[/粉娃娃/, /四色娃娃/] },
     { name: "黄娃娃", value: 'bool', type:"六限", keyword:[/黄娃娃/, /四色娃娃/] },
@@ -108,6 +110,7 @@ const keywords = [
     { name: "一代黄", value: 'bool', type:"披风", keyword:[/一代黄/] },
     { name: "一代红", value: 'bool', type:"披风", keyword:[/一代红/] },
     { name: "一代粉", value: 'bool', type:"披风", keyword:[/一代粉(?!花朝)/] },
+    { name: "一代披风", value: 'cond', type:"披风", default: 0, keyword:[], condition: { from: '一代黑', to: '一代粉', rule: d => d } },
     { name: "二代黑", value: 'bool', type:"披风", keyword:[/二代黑/] },
     { name: "栽火莲", value: 'bool', type:"披风", keyword:[/栽火莲/] },
     { name: "六翼", value: 'bool', type:"披风", keyword:[/六翼/, /6e/] },
@@ -171,14 +174,14 @@ const keywords = [
     { name: "四代粉中秋", value: 'bool', type:"礼盒", keyword:[/四代粉中秋/] },
     { name: "100cw", value: 'bool', type:"杂项", keyword:[/100[^c]*cw/, /100[^橙]*橙武/, /100w/, /100[^大]*大铁/, /100[^玄]*玄晶/, /归(虚|墟)玄晶/, /100级?双cw/] },
     { name: "双100cw", value: 'bool', type:"杂项", keyword:[/双100[^c]*cw/, /双100[^橙]*橙武/, /100[^双]*双[^c]*cw/, /100[^双]*双[^橙]*橙武/] },
-    { name: "滚滚", value: 'bool', type:"杂项", keyword:[/滚滚/] },
-    { name: "月伴", value: 'bool', type:"杂项", keyword:[/月伴/] },
     { name: "焰归", value: 'bool', type:"杂项", keyword:[/焰归/] },
     { name: "珠盏", value: 'bool', type:"杂项", keyword:[/珠盏/] },
     { name: "夜话", value: 'bool', type:"杂项", keyword:[/夜话/] },
     { name: "黑龙", value: 'bool', type:"杂项", keyword:[/黑龙/] },
     { name: "资历", value: 'number', type:"杂项", default: 3, keyword:[/(\d)+(\.\d|w\d?)资历/, /资历(\d|w)+[^\d^w]/]},
-    { name: "奇遇", value: 'number', type:"杂项", default: 0, keyword:[/(\d)+奇遇/] },
+    // { name: "九万资历", value: 'cond', type:"杂项", default: 0, keyword:[/[九|十][万|w]资历/], condition: { from: '资历', to: '资历', rule: d => d >= 9 }},
+    { name: "十万资历", value: 'cond', type:"杂项", default: 0, keyword:[/十[万|w]资历/], condition: { from: '资历', to: '资历', rule: d => d >= 10 }},
+    { name: "奇遇", value: 'number', type:"杂项", default: 0, keyword:[/(\d)+奇遇/], next: d => (d >= 50) },
     { name: "限量", value: 'number', type:"杂项", default: 0, keyword:[/(\d)+限量/] },
     { name: "披风", value: 'number', type:"杂项", default: 0, keyword:[/(\d)+披风/] },
     { name: "成衣", value: 'number', type:"杂项", default: 0, keyword:[/(\d)+(商城)?成衣?/] },
@@ -188,21 +191,64 @@ const keywords = [
     { name: "普通赤兔", value: 'bool', type:"杂项", keyword:[/赤兔/] },
     { name: "二内", value: 'bool', type:"杂项", keyword:[/二内/] },
     { name: "三内", value: 'bool', type:"杂项", keyword:[/三内/] },
-    { name: "月伴晨星", value: 'bool', type:"杂项", keyword:[/月伴晨星/] },
-    { name: "黄金船", value: 'bool', type:"杂项", keyword:[/土豪船/, /黄金船/, /星河清梦/] },
-    { name: "霸红尘", value: 'bool', type:"杂项", keyword:[/霸红尘/, /阴阳两界/] },
-    { name: "三山四海", value: 'bool', type:"杂项", keyword:[/三山/] },
-    { name: "三尺青锋", value: 'bool', type:"杂项", keyword:[/三尺/] },
+    { name: "月伴晨星", value: 'bool', type:"杂项", keyword:[/月伴/] },
+    { name: "星河清梦", value: 'bool', type:"杂项", keyword:[/土豪船/, /黄金船/, /星河清梦/] },
+    { name: "阴阳两界", value: 'bool', type:"杂项", keyword:[/霸红尘/, /阴阳两界/] },
+    { name: "三山四海", value: 'bool', type:"杂项", keyword:[/三山(?!前置)/, /举高高/] },
+    { name: "三尺青锋", value: 'bool', type:"杂项", keyword:[/三尺(?!前置)/] },
+    { name: "塞外宝驹", value: 'bool', type:"杂项", keyword:[/塞外(?!前置)/] },
+    { name: "济苍生", value: 'bool', type:"杂项", keyword:[/济苍生/] },
+    { name: "惜往日", value: 'bool', type:"杂项", keyword:[/惜往日/, /摸头杀/] },
+    { name: "黑白路", value: 'bool', type:"杂项", keyword:[/黑白路/, /大宝剑/] },
     { name: "九天逍遥散", value: 'bool', type:"杂项", keyword:[/九天逍遥/] },
     { name: "大侠", value: 'bool', type:"杂项", keyword:[/大侠/] },
-    { name: "阴阳两界", value: 'bool', type:"杂项", keyword:[/阴阳两界/, /霸红尘/] },
-    { name: "黑白路", value: 'bool', type:"杂项", keyword:[/黑白路/, /大宝剑/] },
     { name: "大雕", value: 'bool', type:"杂项", keyword:[/大雕/] },
+    { name: "滚滚", value: 'bool', type:"杂项", keyword:[/滚滚/] },
     { name: "团团", value: 'bool', type:"杂项", keyword:[/团团/] },
     { name: "闹闹", value: 'bool', type:"杂项", keyword:[/闹闹/] },
     { name: "鹦鹉", value: 'bool', type:"杂项", keyword:[/鹦鹉/] },
     { name: "橘猫", value: 'bool', type:"杂项", keyword:[/橘猫/, /橘胖/] },
 ]
+
+const preReplace = [
+  [/520白/g, '白']
+]
+
+const keywordRules = {
+  '资历': d => {
+    if (d > 1000) {
+      d /= 10000
+    }
+    if (d <= 4) {
+      return 0
+    } else if (d <= 6) {
+      return .4
+    } else if (d <= 7) {
+      return 1
+    } else if (d <= 8) {
+      return 2
+    } else if (d <= 9) {
+      return 4
+    } else if (d <= 10) {
+      return 15
+    } else {
+      return 30
+    }
+  },
+  '奇遇': d => {
+    if (d <= 30) {
+      return .5
+    } else if (d <= 40) {
+      return 1.5
+    } else if (d <= 50) {
+      return 2.5
+    } else if (d <= 55) {
+      return 15
+    } else {
+      return 30
+    }
+  }
+}
 
 const bodys = [
     { name: "萝莉", value: 'bool', type:"体型", keyword:[/萝莉/, /[咩|秀|花|琴|鸽|歌|喵|军|盾|毒|伞|叽|鸡|炮|丐|刀|盾|苍|雪]萝(?!干)/]},
@@ -219,7 +265,7 @@ const schoolKeyword = [
   { name :'长歌', keywords: [/长歌(成女|成男|萝莉|正太)/, /琴[萝|姐|爹|太|娘]/, /[鸽|歌]萝/] },
   { name :'天策', keywords: [/天策(成女|成男|萝莉|正太)/, /军[萝|娘|爷|太]/, /[狗|策]太/] },
   { name :'藏剑', keywords: [/藏剑(成女|成男|萝莉|正太)/, /叽[萝|太]/, /二小姐/, /鸡萝/, /二少/] },
-  { name :'少林', keywords: [/少林(成女|成男|萝莉|正太)/, /大师/, /秃太/, /小(和尚|灯泡)/] },
+  { name :'少林', keywords: [/少林(成女|成男|萝莉|正太)/, /大师/, /秃太/, /小(和尚|灯泡)/, /和尚/] },
   { name :'丐帮', keywords: [/丐帮(成女|成男|萝莉|正太)/, /丐[萝|姐|哥|太]/] },
   { name :'苍云', keywords: [/苍云(成女|成男|萝莉|正太)/, /盾[萝|娘|姐|太]/, /苍[爹|娘|萝|太]/] },
   { name :'纯阳', keywords: [/纯阳(成女|成男|萝莉|正太)/, /咩[萝|太]/, /道[姑|长]/] },
@@ -230,9 +276,21 @@ const schoolKeyword = [
   { name :'凌雪阁', keywords: [/凌雪(成女|成男|萝莉|正太)/, /雪[萝|爹|娘|太]/, /[大|女]侠/] },
 ]
 
+const keywordsMap = {}
+for (let i = 0; i < keywords.length; ++i) {
+  keywordsMap[keywords[i].name] = i
+}
+
+function findKeywordIndex(name) {
+  return keywordsMap[name]
+}
+
 module.exports = {
     bodys,
     keywords,
     schools,
     schoolKeyword,
+    keywordRules,
+    findKeywordIndex,
+    preReplace,
 }

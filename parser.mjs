@@ -45,7 +45,7 @@ const schoolSchema = new mongoose.Schema({
 })
 
 const accounts = mongoose.model('account', accountSchema)
-const infos = mongoose.model('tinfo', infoSchema)
+const infos = mongoose.model('info', infoSchema)
 let keywordIndex = {}
 
 async function updateKeyword() {
@@ -135,6 +135,9 @@ async function parseAll() {
 
     for (let item of items) {
         let text = item.unparsed.content.toLocaleLowerCase().replace(/\s/g, '')
+        for (let r of Keyword.preReplace) {
+            text.replace(r[0], r[1])
+        }
         let text_fixed = text
         let detail = []
         let body = null
@@ -158,8 +161,30 @@ async function parseAll() {
 
         for (let k = 0; k < Keyword.keywords.length; ++k) {
             let x = Keyword.keywords[k]
-            if (x.value == 'bool') {
-                let t = 0
+            let t = 0
+            if (x.value == 'cond') {
+                t = x.default
+                for (let keyword of x.keyword) {
+                    let match = text.match(keyword)
+                    if (match && match[0]) {
+                        let next = match[0].match(/\d+/)
+                        if (next && next[0]) {
+                            t = parseInt(next[0])
+                        } else {
+                            t = 1
+                        }
+                        break
+                    }
+                }
+                if (t == x.default) {
+                    const start = Keyword.findKeywordIndex(x.condition.from)
+                    const end = Keyword.findKeywordIndex(x.condition.to)
+                    for (let i = start; i <= end; ++i) {
+                        t += detail[i]
+                    }
+                    t = x.condition.rule(t)
+                }
+            } else if (x.value == 'bool') {
                 if (x.type == '五限') {
                     for (let keyword of x.keyword) {
                         if (text_fixed.match(keyword) != null) {
@@ -175,22 +200,27 @@ async function parseAll() {
                         }
                     }
                 }
-                detail.push(t)
             } else if (x.value == 'number') {
-                let t = x.default
+                t = x.default
                 for (let keyword of x.keyword) {
                     let match = text.match(keyword)
-                    if (match) {
-                        match = [...match]
-                        if (x.name == '奇遇') {
-                            console.log(match)
+                    if (match && match[0]) {
+                        let next = match[0].match(/\d+/)
+                        if (next && next[0]) {
+                            t = parseInt(next[0])
+                        } else {
+                            t = 1
                         }
-                        t = +match[1] || 1
                         break
                     }
                 }
-                detail.push(t)
             }
+            detail.push(t)
+        }
+        
+        for (let k in Keyword.keywordRules) {
+            let index = Keyword.findKeywordIndex(k)
+            detail[index] = Keyword.keywordRules[k](detail[index])
         }
 
         match = text.match(/【[^】]+】/g)

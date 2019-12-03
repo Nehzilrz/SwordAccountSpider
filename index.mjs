@@ -81,7 +81,6 @@ api.get('/keywords', async (ctx) => {
     }
     const keyword = Keyword.keywords.slice(0, Keyword.keywords.length - 4).map(d => ({ name: d.name, type: d.type }))
     const school = Keyword.schools
-    console.log(query)
     const items = (await infos.find(query)).sort((a, b) => b.timestamp - a.timestamp).map(d => {
         return { detail: d.detail, price : d.price, school: d.school }
     })
