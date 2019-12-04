@@ -1,4 +1,4 @@
-const keywords = [
+let keywords = [
   { name: "四红", type: "发型", alias: [], regs: [], tier: 0 },
   { name: "五红", type: "发型", alias: [], regs: [], tier: 0 },
   { name: "六红", type: "发型", alias: [], regs: [], tier: 0 },
@@ -192,8 +192,8 @@ const keywords = [
   { name: "毒萝干", type: "披风", alias: [], regs: [], tier: 0 },
   { name: "双十一", type: "披风", alias: [], regs: [], tier: 0 },
   { name: "玄晶包出", type: "杂项", alias: ["大铁包出"], regs: [], tier: 0 },
-  { name: "100cw", type: "杂项", alias: [], regs: ["(100[^橙^c^玄^大]{0,3}(橙武|cw|玄晶|大铁))(?!包出)|(归[虚|墟]玄晶)(?!包出)"], tier: 0 },
-  { name: "双100cw", type: "杂项", alias: [], regs: [], tier: 0 },
+  { name: "100cw", type: "杂项", alias: [], regs: ["(100[^橙^玄^c^】]{0,4}(橙武|cw|玄晶))(?!包出)|(100[^大^】]{0,4}(大铁))(?!包出)|(归[虚|墟]玄晶)(?!包出)"], tier: 0 },
+  { name: "双100cw", type: "杂项", alias: ["100双cw"], regs: [], tier: 0 },
   { name: "焰归", type: "杂项", alias: [], regs: [], tier: 0 },
   { name: "珠盏", type: "杂项", alias: [], regs: [], tier: 0 },
   { name: "夜话", type: "杂项", alias: [], regs: [], tier: 0 },
@@ -212,7 +212,6 @@ const keywords = [
   { name: "月伴晨星", type: "杂项", alias: [], regs: [], tier: 0 },
   { name: "星河清梦", type: "杂项", alias: ["土豪船", "黄金船"], regs: [], tier: 0 },
   { name: "九天逍遥散", type: "杂项", alias: ["九天逍遥"], regs: [], tier: 0 },
-  { name: "大侠", type: "杂项", alias: [], regs: [], tier: 0 },
   { name: "大雕", type: "杂项", alias: [], regs: [], tier: 0 },
   { name: "滚滚", type: "杂项", alias: [], regs: [], tier: 0 },
   { name: "团团", type: "杂项", alias: [], regs: [], tier: 0 },
@@ -251,7 +250,7 @@ keywords.forEach((d, i) => {
 })
 
 const Kmap = {}
-const K = (x) => Kmap[x] || null
+const K = (x) => Kmap[x]
 keywords.forEach((d, i) => {
   Kmap[d.name] = i
   d.alias.forEach(e => Kmap[e] = i)
@@ -267,7 +266,7 @@ const T = (x) => Tmap[x] || []
 const try_match = (s, x, keys, reg, i = 0) => {
   if (s[i].match(reg)) {
     for (let k of keys) x[k] = 1
-    s[0] = s[0].replace(reg, '')
+    s[0] = s[0].replace(reg, '$')
     return true
   }
   return false
@@ -282,7 +281,7 @@ const bodys = [
 
 const schools = ['五毒', '七秀', '万花', '长歌', '天策', '藏剑', '少林', '丐帮', '苍云', '纯阳', '明教', '唐门', '霸刀', '蓬莱', '凌雪阁']
 
-keywords.concat(schools.map((d) => ({
+keywords = keywords.concat(schools.map((d) => ({
   name: d, type: '门派', alias: [], regs: [], tier: 1,
 })))
 
@@ -350,7 +349,7 @@ const rules = [
         }
       }
       if (m.length) {
-        s[0] = s[0].replace(/(一代|猴|狐|苏|蝶|喵|高考|考|鸡|国庆|国|飒|倒闭|狗|破晓|龙女|端午|中秋|壶|玫瑰|猪|丝路|珊瑚|兔|月兔|马尾)+金/g, '')
+        s[0] = s[0].replace(/(一代|猴|狐|苏|蝶|喵|高考|考|鸡|国庆|国|飒|倒闭|狗|破晓|龙女|端午|中秋|壶|玫瑰|猪|丝路|珊瑚|兔|月兔|马尾)+金/g, '$')
       }
     }
     return 1
@@ -365,7 +364,7 @@ const rules = [
         }
       }
       if (m.length) {
-        s[0] = s[0].replace(/(四|五|六|羊|猴|七|鸡|八|狗|九|猪|十)+红/g, '')
+        s[0] = s[0].replace(/(四|五|六|羊|猴|七|鸡|八|狗|九|猪|十)+红/g, '$')
       }
     }
     return 1
@@ -439,7 +438,7 @@ const rules = [
     m = s[0].match(/(\d)+五限/)
     if (m) {
       x[K('五限')] = parseInt(m[0])
-      s[0] = s[0].replace(/(\d)+五限/, '')
+      s[0] = s[0].replace(/(\d)+五限/, '$')
     } else {
       x[K('五限')] = T('五限').map(d => x[d]).reduce((a, b) => a + b)
     }
@@ -471,7 +470,7 @@ const rules = [
         }
       }
       if (m.length) {
-        s[0] = s[0].replace(/(白|蓝|粉|红)+无色/g, '')
+        s[0] = s[0].replace(/(白|蓝|粉|红)+无色/g, '$')
       }
     }
     
@@ -484,7 +483,7 @@ const rules = [
         }
       }
       if (m.length) {
-        s[0] = s[0].replace(/(黑|蓝|红|黄)+年轮/g, '')
+        s[0] = s[0].replace(/(黑|蓝|红|黄)+年轮/g, '$')
       }
     }
 
@@ -497,7 +496,7 @@ const rules = [
         }
       }
       if (m.length) {
-        s[0] = s[0].replace(/(白|蓝|粉|黄)+娃娃菜?/g, '')
+        s[0] = s[0].replace(/(白|蓝|粉|黄)+娃娃菜?/g, '$')
       }
     }
 
@@ -544,7 +543,7 @@ const rules = [
       }
     }
     if (m.length) {
-      s[0] = s[0].replace(/(一代|一|二代|二|三代|三|四代|四|老|新)+(七夕|元宵|重阳|花朝)(盒子|盒|衣)?/g, '')
+      s[0] = s[0].replace(/(一代|一|二代|二|三代|三|四代|四|老|新)+(七夕|元宵|重阳|花朝)(盒子|盒|衣)?/g, '$')
     }
     return 1
   },
@@ -552,7 +551,7 @@ const rules = [
     let m = s[0].match(/(一代|老)?.花朝(盒子|盒|衣)?/)
     if (m) {
       x[K('一代花朝')] += m.length
-      s[0] = s[0].replace(/(一代|老)?.花朝(盒子|盒|衣)?/g, '')
+      s[0] = s[0].replace(/(一代|老)?.花朝(盒子|盒|衣)?/g, '$')
     }
     return 1
   },
@@ -561,26 +560,26 @@ const rules = [
     m = s[0].match(/(\d)+白发?/)
     if (m) {
       x[K('白发')] = parseInt(m[0])
-      s[0] = s[0].replace(/(\d)+白发?/, '')
+      s[0] = s[0].replace(/(\d)+白发?/, '$')
     }
     m = s[0].match(/(\d)+黑发?/)
     if (m) {
       x[K('黑发')] = parseInt(m[0])
-      s[0] = s[0].replace(/(\d)+黑发?/, '')
+      s[0] = s[0].replace(/(\d)+黑发?/, '$')
     }
     m = s[0].match(/(\d)+红发?/)
-    if (m) {
-      x[K('红发')] = parseInt(m[0])
-      s[0] = s[0].replace(/(\d)+红发?/, '')
+    if (m && parseInt(m[0]) < 20) {
+      x[K('红发')] = parseInt(m[0]) 
+      s[0] = s[0].replace(/(\d)+红发?/, '$')
     } else {
-      x[K('红发')] = red_hair.map(d => x[K(d)]).reduce((a, b) => a + b)
+      x[K('红发')] = red_hair.map(d => x[d]).reduce((a, b) => a + b)
     }
     m = s[0].match(/(\d)+金发?/)
     if (m) {
       x[K('金发')] = parseInt(m[0])
-      s[0] = s[0].replace(/(\d)+金发?/, '')
+      s[0] = s[0].replace(/(\d)+金发?/, '$')
     } else {
-      x[K('金发')] = red_hair.map(d => x[K(d)]).reduce((a, b) => a + b)
+      x[K('金发')] = golden_hair.map(d => x[d]).reduce((a, b) => a + b)
     }
     return 1
   },
@@ -590,7 +589,7 @@ const rules = [
       let m = s[0].match(keywords[i].reg)
       if (m) {
         x[i] = m.length
-        s[0] = s[0].replace(keywords[i].reg, '')
+        s[0] = s[0].replace(keywords[i].reg, '$')
       }
     }
     try_match(s, x, [K('一代黑'), K('一代白'), K('一代紫'), K('一代黄'), K('一代红'), K('一代粉')], /一代披风全/)
@@ -602,7 +601,7 @@ const rules = [
       let m = s[0].match(keywords[i].reg)
       if (m) {
         x[i] = m.length
-        s[0] = s[0].replace(keywords[i].reg, '')
+        s[0] = s[0].replace(keywords[i].reg, '$')
       }
     }
     return 1
@@ -613,7 +612,7 @@ const rules = [
       let m = s[0].match(keywords[i].reg)
       if (m) {
         x[i] = m.length
-        s[0] = s[0].replace(keywords[i].reg, '')
+        s[0] = s[0].replace(keywords[i].reg, '$')
       }
     }
     if (x[K('劲足赤兔')] == 1) {
@@ -627,7 +626,7 @@ const rules = [
       let m = s[0].match(keywords[i].reg)
       if (m) {
         x[i] = 1
-        s[0] = s[0].replace(keywords[i].reg, '')
+        s[0] = s[0].replace(keywords[i].reg, '$')
       }
     }
     return 1
@@ -638,7 +637,7 @@ const rules = [
       let m = s[0].match(keywords[i].reg)
       if (m) {
         x[i] = m.length
-        s[0] = s[0].replace(keywords[i].reg, '')
+        s[0] = s[0].replace(keywords[i].reg, '$')
       }
     }
     return 1
@@ -698,7 +697,7 @@ const rules = [
     m = s[0].match(/(\d)+限/)
     if (m) {
       x[K('限量')] = parseInt(m[0])
-      s[0] = s[0].replace(/(\d)+限量?/, '')
+      s[0] = s[0].replace(/(\d)+限量?/, '$')
     } else {
       x[K('限量')] =
         (T('五限').map(d => x[d]).reduce((a, b) => a + b) +
@@ -710,7 +709,7 @@ const rules = [
     m = s[0].match(/(\d)+披/)
     if (m) {
       x[K('披风')] = parseInt(m[0])
-      s[0] = s[0].replace(/(\d)+披风?/, '')
+      s[0] = s[0].replace(/(\d)+披风?/, '$')
     } else {
       x[K('披风')] =
         (T('披风').map(d => x[d]).reduce((a, b) => a + b) +
@@ -720,36 +719,58 @@ const rules = [
     m = s[0].match(/(\d)*脚印/)
     if (m) {
       x[K('脚印')] = parseInt(m[0]) || 1
-      s[0] = s[0].replace(/(\d)*脚印/, '') 
+      s[0] = s[0].replace(/(\d)*脚印/, '$') 
     }
 
     m = s[0].match(/(\d)+五甲/)
     if (m) {
       x[K('五甲')] = parseInt(m[0])
-      s[0] = s[0].replace(/(\d)+五甲/, '') 
+      s[0] = s[0].replace(/(\d)+五甲/, '$') 
     }
 
     m = s[0].match(/(\d)+奇遇/)
     if (m) {
       x[K('奇遇')] = parseInt(m[0])
-      s[0] = s[0].replace(/(\d)+奇遇/, '') 
+      s[0] = s[0].replace(/(\d)+奇遇/, '$') 
     } else {
       x[K('奇遇')] = T('奇遇').map(d => x[d]).reduce((a, b) => a + b)
     }
+    let d = x[K('奇遇')]
+    
+    if (d <= 30) {
+      d = .5
+    } else if (d <= 40) {
+      d = 1.5
+    } else if (d <= 50) {
+      d = 2.5
+    } else if (d <= 55) {
+      d = 15
+    } else {
+      d = 30
+    }
+    x[K('奇遇')] = d
     x[K('绝世奇遇')] = x[K('阴阳两界')] + x[K('三山四海')] + x[K('三尺青锋')] + x[K('塞外宝驹')] + x[K('济苍生')]
     x[K('一代披风')] = x[K('一代黑')] + x[K('一代白')] + x[K('一代紫')] + x[K('一代黄')] + x[K('一代红')] + x[K('一代粉')]
     return 1
   },
   (s, x) => {
-    let m = s[0].match(/【[^\d^y]*(\d|w|k)+[^\d]*】/g) || []
+    let m = s[0].match(/【[^\d^y]*(\d|w|k|q|\.)+[^\d]*】/g) || []
     let price = -1
     let str = m.join(',').replace(/资历(\d|w|k)+/, '')
-    m = str.match(/(\d|w|k)+/g)
-    for (let i = 0; i < m.length; ++i) if (m[i] != 'w' && m[i] != 'k') {
-      price = parseNum(m[i])
-      break
+    m = str.match(/(\d|q|w|k|\.)+/g)
+    if (m) {
+      for (let i = 0; i < m.length; ++i) if (m[i] != 'w' && m[i] != 'k' && m[i] != 'q') {
+        price = parseNum(m[i])
+        break
+      }
     }
     if (price == -1) {
+      m = s[0].match(/([咩|花|秀|毒|呱|琴|喵|狗|雪|盾|伞|炮|策|刀|军|苍|秃|丐|鸡|歌][爹|娘|萝|太|爷|姐|哥]|道长|道姑|二少|二小姐|成男|成女|萝莉|正太)[^\d]{0,3}([\d|w|k|q|\.]+)/)
+      if (m && m[2] && m[2].length > 1) {
+        price = parseNum(m[2]) || 0
+      }
+    }
+    if (price <= 0 || price == NaN) {
       return 0
     }
     s['price'] = price
@@ -763,7 +784,24 @@ const rules = [
       x[K('资历')] = 1
     }
     
-    x[K('十万资历')] = x[K('资历')] >= 10
+    x[K('十万资历')] = x[K('资历')] >= 10 ? 1 : 0
+    let d = x[K('资历')]
+    if (d <= 4) {
+      d = 0
+    } else if (d <= 6) {
+      d = .4
+    } else if (d <= 7) {
+      d = 1
+    } else if (d <= 8) {
+      d = 2
+    } else if (d <= 9) {
+      d = 4
+    } else if (d <= 10) {
+      d =  15
+    } else {
+      d =  30
+    }
+    x[K('资历')] = d
     return 1
   }
 ]
@@ -774,15 +812,23 @@ function parseNum(x) {
         let ret = 0
         if (x.indexOf('k') != -1) {
             x = x.split('k')
-            ret += parseInt(x[0]) * 1000
+            ret += parseFloat(x[0]) * 1000
             if (x[1].length > 0) {
                 let y = parseInt(x[1])
                 while (y && y < 100) y *= 10
                 ret += y
             }
+        } else if (x.indexOf('q') != -1) {
+          x = x.split('q')
+          ret += parseFloat(x[0]) * 1000
+          if (x[1].length > 0) {
+              let y = parseInt(x[1])
+              while (y && y < 100) y *= 10
+              ret += y
+          }
         } else if (x.indexOf('w') != -1) {
             x = x.split('w')
-            ret += (parseInt(x[0]) || 1) * 10000
+            ret += (parseFloat(x[0]) || 1) * 10000
             if (x[1].length > 0) {
                 let y = parseInt(x[1])
                 while (y && y < 1000) y *= 10

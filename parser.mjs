@@ -380,7 +380,6 @@ async function parseAll() {
         let text = item.unparsed.content
         let time = item.unparsed.time
         await parse(text, time, item)
-        
     }
     console.log(`${nDuplicate} duplicate items have been ignored.`)
 }

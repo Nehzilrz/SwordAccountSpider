@@ -1,35 +1,50 @@
-import Keyword from './keyword'
-import NewKeyword from './newkeyword'
-import items from './testitems'
+import mongoose from 'mongoose'
+import Keyword from './newkeyword'
 
-function parseNum(x) {
-    if (!x) return 0
-    try {
-        let ret = 0
-        if (x.indexOf('k') != -1) {
-            x = x.split('k')
-            ret += parseInt(x[0]) * 1000
-            if (x[1].length > 0) {
-                let y = parseInt(x[1])
-                while (y && y < 100) y *= 10
-                ret += y
-            }
-        } else if (x.indexOf('w') != -1) {
-            x = x.split('w')
-            ret += (parseInt(x[0]) || 1) * 10000
-            if (x[1].length > 0) {
-                let y = parseInt(x[1])
-                while (y && y < 1000) y *= 10
-                ret += y
-            }
-        } else {
-            ret = parseInt(x)
-        }
-        return ret
-    } catch (e) {
-        return -1
-    }
-}
+mongoose.connect('mongodb://localhost/paopao', { useNewUrlParser: true })
+
+const accountSchema = new mongoose.Schema({
+    unparsed: Object,
+    info: Object,
+    url: String,
+    price: Number,
+    qq: String,
+    name: String,
+    school: String,
+    timestamp: Number,
+    parsed: Boolean,
+})
+accountSchema.index('price')
+accountSchema.index('url')
+
+const infoSchema = new mongoose.Schema({
+    detail: [Number],
+    timestamp: Number,
+    url: String,
+    price: Number,
+    qq: String,
+    body: String,
+    school: String,
+    name: String,
+})
+infoSchema.index('price')
+infoSchema.index('url')
+
+const keywordSchema = new mongoose.Schema({
+    name: String,
+    type: String,
+    index: Number,
+})
+keywordSchema.index('name')
+keywordSchema.index('index')
+
+const schoolSchema = new mongoose.Schema({
+    name: String
+})
+
+const accounts = mongoose.model('account', accountSchema)
+const infos = mongoose.model('info', infoSchema)
+let keywordIndex = {}
 
 function zeros(n) {
     let x = []
@@ -37,150 +52,88 @@ function zeros(n) {
     return x
 }
 
+async function updateKeyword() {
+    const keywords = mongoose.model('keyword', keywordSchema)
+    let index = await keywords.find({})
+    index = index.length
+    for (let i = 0; i < Keyword.keywords.length; ++i) {
+        let status = await keywords.findOne({ name: Keyword.keywords[i].name })
+        if (!status) {
+            const entity = new keywords({
+                name: Keyword.keywords[i].name,
+                type: Keyword.keywords[i].type,
+                index: ++index,
+            })
+            await entity.save()
+            keywordIndex[Keyword.keywords[i].name] = index
+        } else {
+            keywordIndex[Keyword.keywords[i].name] = status.index
+        }
+    }
+}
+
+async function updateSchool() {
+    const schools = mongoose.model('school', schoolSchema)
+    let index = await schools.find({})
+    index = index.length
+    for (let i = 0; i < Keyword.schools.length; ++i) {
+        let status = await schools.findOne({ name: Keyword.schools[i] })
+        if (!status) {
+            const entity = new schools({
+                name: Keyword.schools[i],
+            })
+            await entity.save()
+        }
+    }
+}
+
+async function removeDuplicatedItems() {
+    let items = await accounts.find({ parsed: false })
+    let urlSet = new Set()
+    let nRemove = 0
+    for (let item of items) {
+        if (urlSet.has(item.url)) {
+            await accounts.remove({ _id : item._id })
+            ++nRemove
+        } else {
+            urlSet.add(item.url)
+        }
+    }
+    console.log(`${nRemove} duplicated items have been removed.`)
+}
+
 async function parseAll() {
+    let items = await accounts.find()
     let counter = 0
     let newItemSet = new Set()
     let newItemDetail = {}
     let nDuplicate = 0
 
-    async function parse(text) {
+    async function parse(text, time, item) {
+        text = text.replace(/-/g, '')
+        if (text.length < 10) return
+
         let s = {}
-        s[0] = text
-        let x = zeros(NewKeyword.keywords.length)
-        for (let i = 0; i < NewKeyword.rules.length; ++i) {
-            if (!NewKeyword.rules[i](s, x)) return
-        }
-        let str = ''
-        for (let i = 0; i < x.length; ++i) if (x[i] > 0.5) {
-            str = str + '  ' + NewKeyword.keywords[i].name + ' ' + x[i]
+        s[0] = s['origin'] = text
+        let x = zeros(Keyword.keywords.length)
+        for (let i = 0; i < Keyword.rules.length; ++i) {
+            if (!Keyword.rules[i](s, x)) {
+                console.log(s[0])
+                return
+            }
         }
 
-        console.log(s[0])
-        console.log(s.school, s.body, s.price, str)
-        return
-
-        let text_fixed = text
-        let detail = []
-        let body = null
-        let school = null
+        let body = s['body']
+        let school = s['school']
+        let price = s['price']
         let hash = 0
 
-        let price_reg = /【[^\d^y]*(\d|w|k)+[^\d]*】/g
-        let match = text.match(price_reg)
-        let price = -1
-        if (!match) return
-        for (let k = 0; k < match.length; ++k) {
-            let str = match[k].replace(/资历(\d|w|k)+/, '')
-            let m = str.match(/(\d|w|k)+/g)
-            if (!m) continue
-            for (let i = 0; i < m.length; ++i) if (m[i] != 'w' && m[i] != 'k') {
-                price = parseNum(m[i])
-                break
-            }
-            if (price > 0) break
-        }
-        if (price == -1 || !price) {
-            return
-        }
-
-        if (text_fixed.match(/(复刻|下架)/) != null) {
-            let index = text_fixed.match(/(复刻|下架)/).index
-            text_fixed = text_fixed.slice(0, index)
-        }
-
-        for (let k = 0; k < Keyword.keywords.length; ++k) {
-            let x = Keyword.keywords[k]
-            let t = 0
-            if (x.value == 'cond') {
-                t = x.default
-                for (let keyword of x.keyword) {
-                    let match = text.match(keyword)
-                    if (match && match[0]) {
-                        let next = match[0].match(/\d+/)
-                        if (next && next[0]) {
-                            t = parseInt(next[0])
-                        } else {
-                            t = 1
-                        }
-                        break
-                    }
-                }
-                if (t == x.default) {
-                    if (x.condition.from) {
-                        const start = Keyword.findKeywordIndex(x.condition.from)
-                        const end = Keyword.findKeywordIndex(x.condition.to)
-                        for (let i = start; i <= end; ++i) {
-                            t += detail[i]
-                        }
-                    } else if (x.condition.keys) {
-                        for (let key of x.condition.keys) {
-                            let i = Keyword.findKeywordIndex(key)
-                            t += detail[i]
-                        }
-                    }
-                    t = x.condition.rule(t)
-                }
-            } else if (x.value == 'bool') {
-                if (x.type == '五限') {
-                    for (let keyword of x.keyword) {
-                        if (text_fixed.match(keyword) != null) {
-                            t = 1
-                            break
-                        }
-                    }
-                } else {
-                    for (let keyword of x.keyword) {
-                        if (text.match(keyword) != null) {
-                            t = 1
-                            break
-                        }
-                    }
-                }
-            } else if (x.value == 'number') {
-                t = x.default
-                for (let keyword of x.keyword) {
-                    let match = text.match(keyword)
-                    if (match && match[0]) {
-                        if (x.name == '资历') {
-                            let next = match[0].match(/(\d|w)+/)
-                            t = parseNum(next && next[0] || 10000) / 10000
-                        } else {
-                            let next = match[0].match(/\d+/)
-                            if (next && next[0]) {
-                                t = parseInt(next[0])
-                            } else {
-                                t = 1
-                            }
-                        }
-                        break
-                    }
-                }
-            }
-            detail.push(t)
-        }
-        
-        for (let k in Keyword.keywordRules) {
-            let index = Keyword.findKeywordIndex(k)
-            detail[index] = Keyword.keywordRules[k](detail[index])
-        }
-
-
-        if (!body) {
-            console.log(text)
-            return
-        }
-        if (!school) {
-            console.log(text)
-            return
-        }
-
         let compressed = []
-        for (let i = 0; i < detail.length; ++i) if (detail[i] >= 0.5) {
+        for (let i = 0; i < x.length; ++i) if (x[i] >= 0.5) {
             hash = (hash * 131 + i) % 133333333
             compressed.push(i)
         }
         
-        let time = ''
         if (time == 'parsed') {
             time = 0
         } else {
@@ -233,34 +186,54 @@ async function parseAll() {
             newItemDetail[id] = []
         }
         newItemDetail[id].push(compressed)
-
         newItemSet.add(hash)
+/*
+        for (let i = 0; i < x.length; ++i) {
+            if (x[i] == NaN) {
+                console.log(Keyword.keywords[i].name)
+            }
+            console.log(x[i])
+        }*/
 
         const info = {
-            detail,
+            detail : [...x],
             timestamp : time,
-            price: price,
-            school: school,
-            body: body,
+            url: item.url,
+            price,
+            qq: item.qq,
+            name: item.name,
+            school,
+            body,
         }
 
         if (++counter % 1000 == 0) {
             console.log(`${counter} items have been parsed.`)
         }
+
+        try {
+            const entity = new infos(info)
+            await entity.save()
+        } catch (e) {
+            console.log(e, s['price'], s['origin'])
+        }
     }
 
-    let cnt = 0
-    for (let text of items) {
-        await parse(text)
-        if (++cnt > 100) {
-            break
-        }
-        
+    for (let item of items) {
+        let text = item.unparsed.content
+        let time = item.unparsed.time
+        await parse(text, time, item)
     }
     console.log(`${nDuplicate} duplicate items have been ignored.`)
 }
 
+async function updateInfo() {
+    await updateKeyword()
+    await updateSchool()
+    await removeDuplicatedItems()
+}
+
 async function main() {
+    await updateInfo()
     await parseAll()
 }
 

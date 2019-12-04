@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.mjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --experimental-modules test.mjs",
     "spider": "node --experimental-modules spider.mjs",
     "parser": "node --experimental-modules parser.mjs",
     "server": "node --experimental-modules index.mjs"
