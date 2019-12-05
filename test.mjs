@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import Keyword from './newkeyword'
+import Keyword from './keyword'
 
 mongoose.connect('mongodb://localhost/paopao', { useNewUrlParser: true })
 
